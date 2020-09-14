@@ -1,10 +1,8 @@
-let contacts = require("../db/contacts.json");
 const Joi = require("joi");
 const path = require("path");
 const fs = require("fs").promises;
 const responseNormalizer = require("../normalizers/responseNormalizer");
 const errorNormalizer = require("../normalizers/errorNormalizer");
-const responseNormaliser = require("../normalizers/responseNormalizer");
 
 const contactsPath = path.join(__dirname, "../db", "contacts.json");
 
@@ -112,7 +110,7 @@ class ContactsController {
 
     await fs.writeFile(contactsPath, JSON.stringify(newContacts));
 
-    return res.send(responseNormaliser(updatedContact));
+    return res.send(responseNormalizer(updatedContact));
   }
 
   async listContacts(next) {
