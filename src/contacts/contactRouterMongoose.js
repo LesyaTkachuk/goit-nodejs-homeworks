@@ -12,9 +12,14 @@ const router = express.Router();
 
 router.get("/", async (req, res, next) => {
   try {
-    const contacts = await contactModel.find();
+    const { page = 0, limit = 20 } = req.query;
 
-    res.send(responseNormalizer(contacts));
+    const contacts = await contactModel
+      .find()
+      .skip(parseInt(page) * parseInt(limit))
+      .limit(parseInt(limit));
+
+    res.send(responseNormalizer({ contacts }));
   } catch (err) {
     next(err);
   }
