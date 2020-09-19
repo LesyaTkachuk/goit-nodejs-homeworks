@@ -14,7 +14,7 @@ const main = async () => {
 
     await Promise.all(users.map((user) => user.save()));
 
-    setTimeout(main, 24 * 60 * 60 * 1000);
+    setInterval(main, 24 * 60 * 60 * 1000);
   } catch (err) {
     console.err("Cron token cleaner error", err);
     setTimeout(main, 60 * 1000);

@@ -149,7 +149,7 @@ router.patch("/", authorization, async (req, res) => {
 
     const subscriptionArray = ["free", "pro", "premium"];
 
-    if (!subscriptionArray.includes(subscription)) {
+    if (subscription && !subscriptionArray.includes(subscription)) {
       throw new ApiError(400, "Please choose available type of subscription");
     }
     await UserModel.findByIdAndUpdate(
