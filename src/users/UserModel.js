@@ -2,7 +2,10 @@ const mongoose = require("mongoose");
 const Joi = require("joi");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const path = require("path");
+const { promises: fsPromises } = require("fs");
 const config = require("../../config");
+const Avatar = require("avatar-builder");
 
 const { Schema } = mongoose;
 
@@ -19,6 +22,14 @@ const UserSchema = new Schema({
     required: true,
   },
   password: { type: String, min: 4, required: true },
+  avatarURL: {
+    type: String,
+    default: `http://localhost:${config.port}/images/${config.defaultAvatar}`,
+  },
+  avatarPath: {
+    type: String,
+    default: path.join(config.avatarDir, config.defaultAvatar),
+  },
   subscription: {
     type: String,
     enum: ["free", "pro", "premium"],
@@ -36,6 +47,24 @@ UserSchema.static(
   "hashPassword",
   async (password) => await bcrypt.hash(password, config.bcryptSaltRounds)
 );
+
+UserSchema.static("createAvatar", async () => {
+  try {
+    const avatar = Avatar.catBuilder(128);
+
+    const buffer = await avatar.create();
+    const avatarName = `avatar_default${Date.now()}.png`;
+    const avatarPath = path.join(config.avatarDir, avatarName);
+
+    await fsPromises.writeFile(avatarPath, buffer);
+
+    const avatarURL = `http://localhost:${config.port}/images/${avatarName}`;
+
+    return { avatarURL, avatarPath };
+  } catch (err) {
+    console.err(err);
+  }
+});
 
 UserSchema.method("isPasswordValid", async function (password) {
   return await bcrypt.compare(password, this.password);
@@ -57,6 +86,14 @@ UserSchema.method("generateAndSaveToken", async function () {
 UserSchema.pre("save", async function () {
   if (this.isNew) {
     this.password = await this.constructor.hashPassword(this.password);
+  }
+});
+
+UserSchema.pre("save", async function () {
+  if (this.isNew) {
+    const { avatarURL, avatarPath } = await this.constructor.createAvatar();
+    this.avatarURL = avatarURL;
+    this.avatarPath = avatarPath;
   }
 });
 
