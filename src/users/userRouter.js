@@ -4,7 +4,13 @@ const bcrypt = require("bcrypt");
 const { promises: fsPromises } = require("fs");
 const config = require("../../config");
 const UserModel = require("./UserModel");
-const { ApiError, errorHandler, validate, multer } = require("../helpers");
+const {
+  ApiError,
+  errorHandler,
+  validate,
+  multer,
+  generateAvatarPath,
+} = require("../helpers");
 const responseNormalizer = require("../normalizers/responseNormalizer");
 const { authorization, minifyAvatar } = require("../middlewares");
 
@@ -187,9 +193,7 @@ router.post(
     try {
       const { avatarPath: previousAvatarPath } = req.user;
 
-      const newAvatarURL = `http://localhost:${config.port}/images/${req.file.filename}`;
-
-      req.user.avatarURL = newAvatarURL;
+      req.user.avatarURL = generateAvatarPath(req.file.filename);
       req.user.avatarPath = req.file.path;
 
       await req.user.save();

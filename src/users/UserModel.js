@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const { promises: fsPromises } = require("fs");
+const { generateAvatarPath } = require("../helpers");
 const config = require("../../config");
 const Avatar = require("avatar-builder");
 
@@ -24,7 +25,7 @@ const UserSchema = new Schema({
   password: { type: String, min: 4, required: true },
   avatarURL: {
     type: String,
-    default: `http://localhost:${config.port}/images/${config.defaultAvatar}`,
+    default: generateAvatarPath(config.defaultAvatar),
   },
   avatarPath: {
     type: String,
@@ -58,7 +59,7 @@ UserSchema.static("createAvatar", async () => {
 
     await fsPromises.writeFile(avatarPath, buffer);
 
-    const avatarURL = `http://localhost:${config.port}/images/${avatarName}`;
+    const avatarURL = generateAvatarPath(avatarName);
 
     return { avatarURL, avatarPath };
   } catch (err) {
