@@ -1,10 +1,18 @@
 const { Router } = require("express");
 const Joi = require("joi");
 const bcrypt = require("bcrypt");
-const { ApiError, errorHandler, validate } = require("../helpers");
-const responseNormalizer = require("../normalizers/responseNormalizer");
+const { promises: fsPromises } = require("fs");
+const config = require("../../config");
 const UserModel = require("./UserModel");
-const authorization = require("../middlewares/authorization");
+const {
+  ApiError,
+  errorHandler,
+  validate,
+  multer,
+  generateAvatarPath,
+} = require("../helpers");
+const responseNormalizer = require("../normalizers/responseNormalizer");
+const { authorization, minifyAvatar } = require("../middlewares");
 
 const router = Router();
 
@@ -144,14 +152,26 @@ router.patch("/", authorization, async (req, res) => {
       }),
       req.body
     );
-    const { subscription } = req.body;
+
+    const { subscription, login } = req.body;
     const { _id } = req.user;
+
+    if (login) {
+      const user = await UserModel.findOne({ login });
+
+      if (user)
+        throw new ApiError(
+          409,
+          "Login is already in use. Please choose other one"
+        );
+    }
 
     const subscriptionArray = ["free", "pro", "premium"];
 
     if (subscription && !subscriptionArray.includes(subscription)) {
       throw new ApiError(400, "Please choose available type of subscription");
     }
+
     await UserModel.findByIdAndUpdate(
       _id,
       { $set: req.body },
@@ -163,4 +183,29 @@ router.patch("/", authorization, async (req, res) => {
     errorHandler(req, res, err);
   }
 });
+
+router.post(
+  "/avatar",
+  authorization,
+  multer.single("avatar"),
+  minifyAvatar,
+  async (req, res) => {
+    try {
+      const { avatarPath: previousAvatarPath } = req.user;
+
+      req.user.avatarURL = generateAvatarPath(req.file.filename);
+      req.user.avatarPath = req.file.path;
+
+      await req.user.save();
+      await fsPromises.unlink(previousAvatarPath);
+
+      const { avatarURL } = req.user;
+
+      res.status(200).send(responseNormalizer({ avatarURL }));
+    } catch (err) {
+      errorHandler(req, res, err);
+    }
+  }
+);
+
 module.exports = router;

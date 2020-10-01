@@ -22,16 +22,21 @@
     "nodemon": "^2.0.4"
   },
   "dependencies": {
+    "avatar-builder": "^1.0.1",
     "bcrypt": "^5.0.0",
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
+    "imagemin": "^7.0.1",
+    "imagemin-jpegtran": "^7.0.0",
+    "imagemin-pngquant": "^9.0.1",
     "joi": "^17.2.1",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.20",
     "mongodb": "^3.6.1",
     "mongoose": "^5.10.4",
     "morgan": "^1.10.0",
+    "multer": "^1.4.2",
     "uuid": "^8.3.0",
     "yargs": "^15.4.1"
   }

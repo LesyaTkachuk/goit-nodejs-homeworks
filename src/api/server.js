@@ -18,6 +18,8 @@ async function main() {
     app.use(morgan("tiny"));
     app.use(cors());
     app.use(express.json());
+    app.use(express.urlencoded());
+    app.use(express.static(config.publicDir));
 
     app.use("/contacts", contactRouter);
     app.use("/users", userRouter);
