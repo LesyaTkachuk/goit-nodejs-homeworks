@@ -108,7 +108,7 @@ authRouter.get("/verify/:verificationToken", async (req, res, next) => {
 
     if (!foundUser) throw new ApiError(404, "User is not found");
 
-    foundUser.verificationToken = undefined;
+    foundUser.verificationToken = null;
 
     await foundUser.save();
 

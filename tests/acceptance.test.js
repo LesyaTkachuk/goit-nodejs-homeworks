@@ -1,5 +1,7 @@
 const should = require("should");
 const sinon = require("sinon");
+const path = require("path");
+const { promises: fsPromises } = require("fs");
 const app = require("../src/api/app");
 const UserModel = require("../src/users/UserModel");
 const request = require("supertest");
@@ -26,7 +28,7 @@ describe("Acceptance test", () => {
     });
 
     context("when everything ok", () => {
-      it.skip("should return 200", async () => {
+      it("should return 200", async () => {
         const token = await jwt.sign({ id: "123" }, config.tokenSecretKey);
         const tokens = [
           {
@@ -40,9 +42,11 @@ describe("Acceptance test", () => {
           "findById",
           sinon.fake.returns({
             id: "123",
-            login: "lesya",
+            login: "test",
             tokens,
-            avatarPath: "files/some-img.png",
+            avatarURL: "",
+            avatarPath: "",
+            save: sinon.fake(),
           })
         );
 
@@ -51,14 +55,19 @@ describe("Acceptance test", () => {
           .set("Content-Type", "multipart/form-data")
           .set("Authorization", `Bearer ${token}`)
           .field("name", "my awesome avatar")
-          .attach("avatar", "./fixtures/some_avatar.png")
+          .attach("avatar", path.join(__dirname, "fixtures", "some_avatar.png"))
           .expect("Content-Type", /json/)
           .expect(200)
           .catch((err) => console.log(err));
 
-        console.log("response", response);
+        response.body.data.should.have
+          .property("avatarURL")
+          .which.is.a.String();
 
-        response.body.should.have.property("avatarURL").which.is.a.String();
+        const { avatarURL } = response.body.data;
+        const index = avatarURL.lastIndexOf("/");
+        const filename = avatarURL.substring(index + 1);
+        await fsPromises.unlink(path.join(config.avatarDir, filename));
       });
     });
   });

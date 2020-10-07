@@ -119,7 +119,7 @@ userRouter.post(
       req.user.avatarPath = req.file.path;
 
       await req.user.save();
-      await fsPromises.unlink(previousAvatarPath);
+      if (previousAvatarPath) await fsPromises.unlink(previousAvatarPath);
 
       const { avatarURL } = req.user;
 
