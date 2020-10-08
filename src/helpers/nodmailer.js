@@ -17,7 +17,7 @@ class Nodemailer {
       from: config.nodemailer_user,
       to: userEmail,
       subject: "Verification Email",
-      html: `<a href="http://localhost:${config.port}/auth/verify/${token}">Verify email</a>`,
+      html: `<a href="http://${config.host}:${config.port}/auth/verify/${token}">Verify email</a>`,
     });
   }
 }
