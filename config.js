@@ -3,7 +3,7 @@ const path = require("path");
 
 module.exports = {
   port: process.env.PORT,
-  host: localhost,
+  host: "localhost",
   databaseUrl: process.env.MONGODB_URL,
   databaseName: process.env.MONGODB_NAME,
   tokenSecretKey: process.env.TOKEN_SECRET_KEY,
