@@ -1,8 +1,6 @@
 const { Router } = require("express");
 const Joi = require("joi");
-const bcrypt = require("bcrypt");
 const { promises: fsPromises } = require("fs");
-const config = require("../../config");
 const UserModel = require("./UserModel");
 const {
   ApiError,
@@ -14,9 +12,9 @@ const {
 const responseNormalizer = require("../normalizers/responseNormalizer");
 const { authorization, minifyAvatar } = require("../middlewares");
 
-const router = Router();
+const userRouter = Router();
 
-router.get("/", async (req, res) => {
+userRouter.get("/", async (req, res) => {
   try {
     validate(
       Joi.object({
@@ -42,69 +40,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/auth/register", async (req, res) => {
-  try {
-    validate(
-      Joi.object({
-        login: Joi.string().min(2).required(),
-        email: Joi.string().email().required(),
-        password: Joi.string().min(4).required(),
-      }),
-      req.body
-    );
-
-    const { login, email, password } = req.body;
-
-    const [user] = await UserModel.find({
-      $or: [{ email }, { login }],
-    });
-
-    if (user) throw new ApiError(409, "Login or Email are in use");
-
-    const createdUser = await UserModel.create({
-      login,
-      email,
-      password,
-    });
-
-    res.status(200).send(responseNormalizer(createdUser));
-  } catch (err) {
-    errorHandler(req, res, err);
-  }
-});
-
-router.post("/auth/login", async (req, res) => {
-  try {
-    validate(
-      Joi.object({
-        email: Joi.string().email().required(),
-        password: Joi.string().min(4).required(),
-      }),
-      req.body
-    );
-
-    const { email, password } = req.body;
-
-    const foundUser = await UserModel.findOne({ email });
-
-    if (!foundUser) throw new ApiError(401, "Email or password is wrong");
-
-    const isPasswordValid = await bcrypt.compare(password, foundUser.password);
-
-    if (!isPasswordValid) throw new ApiError(401, "Email or password is wrong");
-
-    const token = await foundUser.generateAndSaveToken();
-
-    const { _id, email: userEmail, subscription } = foundUser;
-    res.send(
-      responseNormalizer({ _id, userEmail, subscription, activeToken: token })
-    );
-  } catch (err) {
-    errorHandler(req, res, err);
-  }
-});
-
-router.get("/current", authorization, async (req, res, next) => {
+userRouter.get("/current", authorization, async (req, res, next) => {
   try {
     const { _id, email, login, subscription } = req.user;
 
@@ -114,36 +50,22 @@ router.get("/current", authorization, async (req, res, next) => {
   }
 });
 
-router.post("/auth/logout", authorization, async (req, res) => {
-  try {
-    const { activeToken, user } = req;
-
-    user.tokens = user.tokens.filter(
-      (tokenRecord) => tokenRecord.token !== activeToken
-    );
-
-    await user.save();
-
-    res.status(204).send();
-  } catch (err) {
-    errorHandler(req, res, err);
-  }
-});
-
-router.delete("/:userId", async (req, res) => {
+userRouter.delete("/:userId", authorization, async (req, res) => {
   try {
     const deletedUser = await UserModel.findByIdAndRemove(req.params.userId);
     if (!deletedUser) {
       throw new ApiError(404, "User was not found");
     }
 
+    await fsPromises.unlink(deletedUser.avatarPath);
+
     res.status(204).send();
   } catch (err) {
     errorHandler(req, res, err);
   }
 });
 
-router.patch("/", authorization, async (req, res) => {
+userRouter.patch("/", authorization, async (req, res) => {
   try {
     validate(
       Joi.object({
@@ -184,7 +106,7 @@ router.patch("/", authorization, async (req, res) => {
   }
 });
 
-router.post(
+userRouter.post(
   "/avatar",
   authorization,
   multer.single("avatar"),
@@ -197,7 +119,7 @@ router.post(
       req.user.avatarPath = req.file.path;
 
       await req.user.save();
-      await fsPromises.unlink(previousAvatarPath);
+      if (previousAvatarPath) await fsPromises.unlink(previousAvatarPath);
 
       const { avatarURL } = req.user;
 
@@ -208,4 +130,4 @@ router.post(
   }
 );
 
-module.exports = router;
+module.exports = userRouter;

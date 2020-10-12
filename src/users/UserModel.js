@@ -42,6 +42,7 @@ const UserSchema = new Schema({
       expires: { type: Date, required: true },
     },
   ],
+  verificationToken: { type: String },
 });
 
 UserSchema.static(

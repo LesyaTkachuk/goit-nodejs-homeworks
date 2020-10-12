@@ -2,4 +2,4 @@ const path = require("path");
 const config = require("../../config");
 
 module.exports = (avatarName) =>
-  `http://localhost:${config.port}/images/${avatarName}`;
+  `http://${config.host}:${config.port}/images/${avatarName}`;

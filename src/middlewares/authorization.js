@@ -3,7 +3,7 @@ const { errorHandler, ApiError } = require("../helpers");
 const config = require("../../config");
 const UserModel = require("../users/UserModel");
 
-module.exports = async (req, res, next) => {
+module.exports = async function (req, res, next) {
   try {
     const authHeader = req.get("Authorization") || "";
     const token = authHeader.replace("Bearer ", "");
